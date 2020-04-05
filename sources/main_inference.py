@@ -13,7 +13,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 model, input_size = custom_model.initialize_model(num_classes, keep_feature_extract=True, use_pretrained=False)
 
-state_dict = torch.load("checkpoint_0010.pth", map_location=device)
+state_dict = torch.load("training_output_Skydiver_dataset_final/best_DeepLabV3_Skydiver.pth", map_location=device)
 
 model = model.to(device)
 model.load_state_dict(state_dict)
@@ -24,7 +24,7 @@ transforms_image =  transforms.Compose([
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
     ])
 
-for idx in range(1, 3000):
+for idx in range(1, 3000, 25):
 
     image = Image.open(f"/tmp/pycharm_project_782/03.03.20_saut_4/{idx:06}.png")
 
@@ -54,17 +54,9 @@ for idx in range(1, 3000):
     # preds_np = cv2.cvtColor(preds_np, cv2.COLOR_GRAY2BGR)
     image_np = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
 
-    # image_np[preds_np == 0] = 0
-    mask = np.zeros(preds_np.shape, preds_np.dtype)
-    mask[preds_np == 1] = 255
-    mask[preds_np == 2] = 128
+    preds_np_color = cv2.applyColorMap(preds_np * 50, cv2.COLORMAP_HSV)
 
-    new_shape = (image_np.shape[0], image_np.shape[1], image_np.shape[2] + 1)
-    image_bgra_np = np.zeros(new_shape, image_np.dtype)
-    image_bgra_np[:, :, 0:3] = image_np
-    image_bgra_np[:, :, 3] = mask
-
-    cv2.imwrite(f"./results/pred_{idx:03}.png", preds_np)
-    cv2.imwrite(f"./results/im_{idx:03}.png", image_bgra_np)
+    cv2.imwrite(f"./results/{idx:04}_segmentation.png", preds_np_color)
+    cv2.imwrite(f"./results/{idx:04}_image.png", image_np)
 
 
