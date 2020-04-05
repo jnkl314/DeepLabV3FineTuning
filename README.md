@@ -33,4 +33,65 @@ Once you replace sample_data with your own dataset :
 python sources/main_training.py ./sample_dataset ./training_output --num_classes 5 --epochs 100 --batch_size 16 --keep_feature_extract
 ```
 
+## Step by step
+### Model
+First thing is to fetch a pretrained DeepLabV3 model. <br/>
+It is pretrained on a subset of COCO train2017, on the 20 categories that are present in the Pascal VOC dataset.
+```python
+model_deeplabv3 = models.segmentation.deeplabv3_resnet101(pretrained=use_pretrained, progress=True)
+```
+The auxiliary classifier is removed, and the pretrained weights are frozen.
+```python
+model_deeplabv3 = models.segmentation.deeplabv3_resnet101(pretrained=use_pretrained, progress=True)
+model_deeplabv3.aux_classifier = None
+for param in model_deeplabv3.parameters():
+    param.requires_grad = False
+```
+The pretrained classifier is replaced by a new one with a custom number of classes. Since it comes after the freeze, its weights won't be frozen. They are the one that we will fine-tune. 
+```python
+model_deeplabv3.classifier = torchvision.models.segmentation.deeplabv3.DeepLabHead(2048, num_classes)
+```
+### Data Augmentation
+Following data augmentation are applied to the training set :
+```python
+self.transforms = transforms.Compose([
+    transforms.RandomHorizontalFlip(),
+    transforms.RandomVerticalFlip(),
+    transforms.RandomCrop((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406, 0], [0.229, 0.224, 0.225, 1])
+])
+```
+For the validation set, only centered crop and normalization are applied :
+```python
+self.transforms = transforms.Compose([
+    transforms.CenterCrop((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize([0.485, 0.456, 0.406, 0], [0.229, 0.224, 0.225, 1])
+])
+```
+To ensure that the same transformation is applied on the input image and the expected output label image, both of them are merged into a 4 channels image prior to transformation. They are then split back as two separate entities for the training.<br/>
+```python
+image = Image.open(img_path)
+label = Image.open(label_path)
+
+# Concatenate image and label, to apply same transformation on both
+image_np = np.asarray(image)
+label_np = np.asarray(label)
+new_shape = (image_np.shape[0], image_np.shape[1], image_np.shape[2] + 1)
+image_and_label_np = np.zeros(new_shape, image_np.dtype)
+image_and_label_np[:, :, 0:3] = image_np
+image_and_label_np[:, :, 3] = label_np
+
+# Convert to PIL
+image_and_label = Image.fromarray(image_and_label_np)
+
+# Apply Transforms
+image_and_label = self.transforms(image_and_label)
+
+# Extract image and label
+image = image_and_label[0:3, :, :]
+label = image_and_label[3, :, :].unsqueeze(0)
+```
+
 TBC
