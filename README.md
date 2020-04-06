@@ -95,4 +95,16 @@ label = image_and_label[3, :, :].unsqueeze(0)
 
 ### Training
 The chosen training loss is Cross Entropy (https://pytorch.org/docs/stable/nn.html#crossentropyloss) since it is well suited for multiclass classification problems.<br/>
+```python
+# Setup the loss function
+criterion = nn.CrossEntropyLoss(weight=(torch.FloatTensor(weight).to(device) if weight else None))
+```
 The optimizer is SGD with a learning rate of 0.001 and a momentum of 0.9.<br/>
+Only the classifier parameters are optimized.<br/>
+```python
+params_to_update = []
+for name, param in model_deeplabv3.named_parameters():
+    if param.requires_grad:
+        params_to_update.append(param)
+optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
+```
