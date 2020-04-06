@@ -42,12 +42,11 @@ model_deeplabv3 = models.segmentation.deeplabv3_resnet101(pretrained=use_pretrai
 ```
 The auxiliary classifier is removed, and the pretrained weights are frozen.
 ```python
-model_deeplabv3 = models.segmentation.deeplabv3_resnet101(pretrained=use_pretrained, progress=True)
 model_deeplabv3.aux_classifier = None
 for param in model_deeplabv3.parameters():
     param.requires_grad = False
 ```
-The pretrained classifier is replaced by a new one with a custom number of classes. Since it comes after the freeze, its weights won't be frozen. They are the one that we will fine-tune. 
+The pretrained classifier is replaced by a new one with a custom number of classes. Since it comes after the freeze, its weights won't be frozen. They are the ones that we will fine-tune. 
 ```python
 model_deeplabv3.classifier = torchvision.models.segmentation.deeplabv3.DeepLabHead(2048, num_classes)
 ```
@@ -94,4 +93,6 @@ image = image_and_label[0:3, :, :]
 label = image_and_label[3, :, :].unsqueeze(0)
 ```
 
-TBC
+### Training
+The chosen training loss is Cross Entropy (https://pytorch.org/docs/stable/nn.html#crossentropyloss) since it is well suited for multiclass classification problems.<br/>
+The optimizer is SGD with a learning rate of 0.001 and a momentum of 0.9.<br/>
