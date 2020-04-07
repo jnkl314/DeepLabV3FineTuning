@@ -32,6 +32,7 @@ Once you replace sample_data with your own dataset :
 ```bash
 python sources/main_training.py ./sample_dataset ./training_output --num_classes 5 --epochs 100 --batch_size 16 --keep_feature_extract
 ```
+Best value I obtained were Loss: 0.2066 and Accuracy: 0.8099 with 100 epochs
 
 ## Step by step
 ### Model
@@ -108,3 +109,4 @@ for name, param in model_deeplabv3.named_parameters():
         params_to_update.append(param)
 optimizer_ft = optim.SGD(params_to_update, lr=0.001, momentum=0.9)
 ```
+The accuracy is computed as the mean of the IoU (Intersection-over-Union).
